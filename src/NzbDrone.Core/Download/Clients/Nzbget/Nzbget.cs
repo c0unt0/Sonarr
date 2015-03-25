@@ -167,7 +167,12 @@ namespace NzbDrone.Core.Download.Clients.Nzbget
                     historyItem.Status = DownloadItemStatus.Failed;
                 }
 
-                if (!successStatus.Contains(item.DeleteStatus))
+                if (!successStatus.Contains(item.DeleteStatus) && item.DeleteStatus.IsNotNullOrWhiteSpace())
+                {
+                    historyItem.Status = DownloadItemStatus.Warning;
+                }
+
+                if (item.DeleteStatus == "HEALTH")
                 {
                     historyItem.Status = DownloadItemStatus.Failed;
                 }
@@ -249,7 +254,12 @@ namespace NzbDrone.Core.Download.Clients.Nzbget
         {
             try
             {
-                _proxy.GetVersion(Settings);
+                var version = _proxy.GetVersion(Settings);
+
+                if (Version.Parse(version) < Version.Parse("12.0"))
+                {
+                    return new ValidationFailure(string.Empty, "Nzbget version too low, need 12.0 or higher");
+                }
             }
             catch (Exception ex)
             {
